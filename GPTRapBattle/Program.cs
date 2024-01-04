@@ -1,14 +1,13 @@
 ﻿using OpenAI_API.Chat;
 using System.Text;
 
-var id = Guid.NewGuid();
 var date = DateTime.Now.ToString("ddd, dd MMM yyy HH':'mm':'ss");
-
 var contestantAName = "Tobin 'The Tax Collector' Mathews";
 var contestantBName = "Tim 'Master' Weeks";
 var subject = "Tax Returns";
 
-Directory.CreateDirectory($"output/{id}");
+Directory.CreateDirectory($"output/");
+var completeContestOutput = new StringBuilder();
 
 var openAiApiKey = Environment.GetEnvironmentVariable("OpenAiApiKey", EnvironmentVariableTarget.User);
 var api = new OpenAI_API.OpenAIAPI(openAiApiKey);
@@ -28,6 +27,10 @@ var moderatorResponse = await SetupActor(
 Console.WriteLine();
 Console.WriteLine();
 
+completeContestOutput.AppendLine(moderatorResponse);
+completeContestOutput.AppendLine();
+completeContestOutput.AppendLine();
+
 // get first rap from A
 var contestantASetupRequest = new ChatRequest
 {
@@ -46,11 +49,22 @@ var contestantARap1 = await SetupActor(
 Console.WriteLine();
 Console.WriteLine();
 
+completeContestOutput.AppendLine(contestantARap1);
+completeContestOutput.AppendLine();
+completeContestOutput.AppendLine();
+
 // send A first rap to moderator
 moderator.AppendUserInput(contestantARap1.ToString());
-await moderator.StreamResponseFromChatbotAsync(s => { Console.Write(s); });
+await moderator.StreamResponseFromChatbotAsync(s =>
+{
+    completeContestOutput.Append(s);
+    Console.Write(s);
+});
 Console.WriteLine();
 Console.WriteLine();
+
+completeContestOutput.AppendLine();
+completeContestOutput.AppendLine();
 
 // get first rap from B
 var contestantBSetupRequest = new ChatRequest
@@ -70,11 +84,22 @@ var contestantBRap1 = await SetupActor(
 Console.WriteLine();
 Console.WriteLine();
 
+completeContestOutput.AppendLine(contestantBRap1);
+completeContestOutput.AppendLine();
+completeContestOutput.AppendLine();
+
 // send B first rap to moderator
 moderator.AppendUserInput(contestantBRap1.ToString());
-await moderator.StreamResponseFromChatbotAsync(s => { Console.Write(s); });
+await moderator.StreamResponseFromChatbotAsync(s =>
+{
+    completeContestOutput.Append(s);
+    Console.Write(s);
+});
 Console.WriteLine();
 Console.WriteLine();
+
+completeContestOutput.AppendLine();
+completeContestOutput.AppendLine();
 
 // get last rap from A
 var contestantARap2 = new StringBuilder();
@@ -82,33 +107,55 @@ contestantA.AppendUserInput($"{contestantBRap1}\r\n\r\nPlease respond '{contesta
 await contestantA.StreamResponseFromChatbotAsync(s =>
 {
     contestantARap2.Append(s);
+    completeContestOutput.Append(s);
     Console.Write(s);
 });
 Console.WriteLine();
 Console.WriteLine();
 
+completeContestOutput.AppendLine();
+completeContestOutput.AppendLine();
+
 // send A last rap to moderator
 moderator.AppendUserInput(contestantARap2.ToString());
-await moderator.StreamResponseFromChatbotAsync(s => { Console.Write(s); });
+await moderator.StreamResponseFromChatbotAsync(s =>
+{
+    completeContestOutput.Append(s);
+    Console.Write(s);
+});
 Console.WriteLine();
 Console.WriteLine();
+
+completeContestOutput.AppendLine();
+completeContestOutput.AppendLine();
 
 // get last rap from B
 var contestantBRap2 = new StringBuilder();
 contestantB.AppendUserInput($"{contestantARap2}\r\n\r\nPlease respond '{contestantBName}'!");
 await contestantB.StreamResponseFromChatbotAsync(s =>
 {
+    completeContestOutput.Append(s);
     contestantBRap2.Append(s);
     Console.Write(s);
 });
 Console.WriteLine();
 Console.WriteLine();
 
+completeContestOutput.AppendLine();
+completeContestOutput.AppendLine();
+
 // send B last rap to moderator
 moderator.AppendUserInput($"{contestantARap2}\r\n\r\nThat's the last rap of the contest!");
-await moderator.StreamResponseFromChatbotAsync(s => { Console.Write(s); });
+await moderator.StreamResponseFromChatbotAsync(s =>
+{
+    completeContestOutput.Append(s);
+    Console.Write(s);
+});
 Console.WriteLine();
 Console.WriteLine();
+
+// Save our output
+await File.WriteAllTextAsync($"output/rap_{Guid.NewGuid()}.txt", completeContestOutput.ToString());
 
 // And we are done!
 Console.WriteLine(string.Empty);
